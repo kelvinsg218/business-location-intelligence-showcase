@@ -19,6 +19,7 @@ flowchart TB
             AN["Análises salvas"]
             PJ["Projetos"]
             CL["Locais candidatos"]
+            CMP["Comparação<br/>(somente leitura)"]
         end
         PR["Contratos de provedores<br/>geocodificação · lugares"]
     end
@@ -40,6 +41,8 @@ flowchart TB
 
 **Banco de dados.** PostgreSQL, acessado com SQL parametrizado e sem ORM. O schema evolui por migrations versionadas. Regras importantes, como posse dos dados, integridade entre entidades e imutabilidade dos snapshots, são reforçadas no próprio banco, além da aplicação.
 
+**Comparação.** Uma camada de leitura sobre os dados já existentes. Ela recebe a seleção de locais de um projeto, lê os snapshots salvos correspondentes e monta a visão comparativa. Não grava nada (não existe tabela de comparações), não aciona provedores e não altera snapshots; a mesma seleção produz sempre a mesma comparação.
+
 **Provedores.** Geocodificação e busca de lugares ficam atrás de contratos. Existem implementações para um provedor externo e implementações simuladas determinísticas, usadas em desenvolvimento, testes e CI. Trocar o provedor não afeta o restante do sistema.
 
 ## Modelo conceitual
@@ -53,8 +56,19 @@ erDiagram
 ```
 
 - Toda entidade pertence a um usuário.
+- A comparação não é uma entidade: é derivada, no momento da leitura, de locais candidatos do mesmo projeto e de seus snapshots.
 - Uma análise salva pode existir sem local candidato (análise avulsa).
 - Excluir um projeto remove seus locais candidatos, mas as análises salvas são preservadas no histórico, apenas desvinculadas.
+
+## Fluxo de dados da comparação
+
+```mermaid
+flowchart LR
+    PJ["Projeto"] --> CL["Locais candidatos<br/>(2 a 5, do mesmo projeto)"]
+    CL --> SN["Snapshots salvos<br/>(mais recente por padrão)"]
+    SN --> CMP["Comparação<br/>calculada sob demanda"]
+    CMP --> UI["Tabela lado a lado<br/>+ mapa, quando permitido"]
+```
 
 ## Decisões e motivos
 
@@ -63,7 +77,10 @@ erDiagram
 | Monólito modular | Fronteiras claras entre domínios sem o custo operacional de serviços distribuídos no estágio atual |
 | Snapshots imutáveis e versionados | Um resultado salvo precisa continuar significando a mesma coisa; versões permitem saber como ele foi produzido |
 | Salvar só por ação explícita | Evita acumular dados, e dados de localização, que o usuário não pediu para guardar |
-| Local candidato separado da análise | Um ponto é estudado várias vezes; a separação prepara uma futura comparação |
+| Local candidato separado da análise | Um ponto é estudado várias vezes; a comparação trabalha sobre as análises de cada local |
+| Comparação derivada, sem persistência | Evita dados duplicados e desatualizados; o resultado é sempre consistente com os snapshots |
+| Comparação sem ranking | O produto apoia a decisão e não a toma; destaques são apenas maior e menor valor observado |
+| Comparabilidade por versão | Snapshots registram como foram produzidos; resultados de métodos diferentes não são misturados |
 | Posse derivada da sessão | O navegador nunca informa quem é o dono de um recurso |
 | Recursos de outros usuários respondem 404 | Não revela a existência de dados alheios |
 | Provedores por contrato + simulados | Desenvolvimento e testes sem custo, determinísticos e sem chamadas externas |
@@ -75,5 +92,6 @@ erDiagram
 
 - Testes de unidade, integração e contra PostgreSQL real no backend; testes de componentes e de fluxos completos no frontend.
 - Testes de arquitetura verificam automaticamente as regras de posse em toda camada de persistência nova.
+- Testes garantem que abrir uma comparação não chama provedores, não grava dados e não altera snapshots, e que a tela não usa linguagem de ranking ou recomendação.
 - CI (GitHub Actions) com banco PostgreSQL efêmero: lint, migrations com verificação de idempotência, testes e build.
 - Smoke tests em navegador cobrindo os fluxos principais, executados localmente com provedores simulados.

@@ -24,6 +24,7 @@ Práticas adotadas no BLI, descritas em alto nível. Configurações, parâmetro
 - Cada recurso pertence a um usuário, e o dono é sempre determinado pela sessão, nunca por dados enviados pelo navegador.
 - Todas as consultas são filtradas pelo usuário. O banco de dados também impede vínculos entre dados de usuários diferentes.
 - Recursos de outro usuário respondem exatamente como recursos inexistentes.
+- Comparações só aceitam locais do mesmo projeto e do próprio usuário; qualquer outra seleção é recusada da mesma forma.
 - Consultas SQL sempre parametrizadas. Uma regra de lint e testes de arquitetura impedem SQL montado por concatenação.
 - Resultados salvos não podem ser alterados, nem pela API nem diretamente no banco.
 

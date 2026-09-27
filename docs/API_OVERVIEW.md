@@ -51,6 +51,14 @@ API REST versionada em `/api/v1`, com JSON e autenticação por sessão (cookie)
 | `POST` / `GET` | `/api/v1/projects/{id}/locations` | Adiciona / lista os locais de um projeto |
 | `GET` / `PATCH` / `DELETE` | `/api/v1/candidate-locations/{id}` | Lê (com análises relacionadas) / renomeia ou anota / remove |
 
+### Comparação
+
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `POST` | `/api/v1/projects/{projectId}/compare` | Recebe a seleção de 2 a 5 locais candidatos do projeto e devolve a comparação lado a lado, montada a partir das análises salvas |
+
+A comparação é calculada a cada chamada e não é gravada; não executa análises nem consulta provedores externos. Os locais precisam pertencer ao projeto e ao usuário da sessão e ter ao menos uma análise salva. A seleção vai no corpo da requisição, e não na URL.
+
 ### Operação
 
 | Método | Endpoint | Descrição |
