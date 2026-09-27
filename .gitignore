@@ -1,0 +1,40 @@
+# This repository is documentation only. Never commit secrets or source code here.
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+secrets/
+secret/
+credentials/
+credentials*.json
+*credentials*
+*.secret
+
+# Dependencies and builds (none are expected in this repository)
+node_modules/
+dist/
+build/
+coverage/
+
+# Logs, dumps and temporary files
+*.log
+*.dump
+*.sql
+*.sqlite
+*.db
+*.tmp
+*.bak
+*.swp
+~$*
+
+# OS and editors
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

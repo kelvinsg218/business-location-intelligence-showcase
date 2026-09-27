@@ -1,0 +1,40 @@
+{
+  "_aviso": "Exemplo ILUSTRATIVO e simplificado, com dados fictícios. Não é uma resposta real da API e não reproduz o contrato interno.",
+  "location": {
+    "label": "Vitória, ES",
+    "coordinates": {
+      "latitude": -20.0,
+      "longitude": -40.0
+    },
+    "selectedBy": "map_click"
+  },
+  "businessType": "academia",
+  "radiusKm": 3,
+  "competition": {
+    "competitorsFound": 12,
+    "densityPerKm2": 0.42,
+    "averageDistanceKm": 1.6,
+    "level": "moderado",
+    "localCompetitionIndicator": {
+      "value": 55,
+      "scale": "0-100",
+      "meaning": "Descritivo: valores maiores indicam menos concorrentes por km² na área analisada. Não mede demanda e não é uma recomendação."
+    }
+  },
+  "commercialContext": {
+    "complementaryBusinesses": 7,
+    "potentialTrafficGenerators": 3
+  },
+  "notes": [
+    "A contagem reflete o que a busca encontrou, não um censo completo da região.",
+    "Resultado de apoio à decisão: não prevê sucesso nem garante demanda."
+  ],
+  "snapshot": {
+    "savedAt": "2026-01-01T12:00:00Z",
+    "immutable": true,
+    "versions": {
+      "engine": "0.5.0",
+      "schema": 1
+    }
+  }
+}
