@@ -27,6 +27,8 @@ Práticas adotadas no BLI, descritas em alto nível. Configurações, parâmetro
 - Comparações só aceitam locais do mesmo projeto e do próprio usuário; qualquer outra seleção é recusada da mesma forma.
 - Consultas SQL sempre parametrizadas. Uma regra de lint e testes de arquitetura impedem SQL montado por concatenação.
 - Resultados salvos não podem ser alterados, nem pela API nem diretamente no banco.
+- Os dados públicos do IBGE ficam separados dos dados dos usuários. A aplicação os lê por uma conexão somente leitura, imposta pelo próprio banco; a importação usa uma ferramenta à parte, que pode operar com uma identidade de banco restrita às tabelas desses dados, sem acesso a dados de usuários.
+- Arquivos oficiais importados têm a integridade verificada (SHA-256) e cada registro validado antes de qualquer gravação.
 
 ## Privacidade
 
@@ -35,6 +37,7 @@ Práticas adotadas no BLI, descritas em alto nível. Configurações, parâmetro
 - Coordenadas e endereços trafegam no corpo das requisições nos fluxos novos, e os logs não registram parâmetros de consulta.
 - Mensagens de erro não ecoam endereços, coordenadas ou detalhes internos.
 - Falhas de banco retornam erros genéricos, sem dados de conexão.
+- A demografia usa apenas **dados públicos agregados** do IBGE; nenhuma informação pessoal é envolvida. Logs de falhas da consulta demográfica não registram as coordenadas analisadas.
 
 ## Segredos e ambiente
 
@@ -46,6 +49,8 @@ Práticas adotadas no BLI, descritas em alto nível. Configurações, parâmetro
 ## Terceiros
 
 O armazenamento de conteúdo de provedores externos respeita os termos de cada provedor: guarda-se apenas o que é permitido, e o que não pode ser guardado é removido antes de salvar.
+
+Por cautela com os termos do provedor de mapas, coordenadas de estabelecimentos e pontos obtidos por busca de endereço não são cruzados com os dados do IBGE; a demografia só é calculada para pontos posicionados pelo usuário, e a origem de cada ponto é registrada.
 
 ## Reportar um problema
 

@@ -20,17 +20,23 @@ flowchart TB
             PJ["Projetos"]
             CL["Locais candidatos"]
             CMP["Comparação<br/>(somente leitura)"]
+            DEM["Demografia<br/>(dados de referência)"]
         end
         PR["Contratos de provedores<br/>geocodificação · lugares"]
+        IMP["Importador versionado<br/>(ferramenta de linha de comando)"]
     end
-    DB[("PostgreSQL")]
+    DB[("PostgreSQL<br/>dados dos usuários")]
+    REF[("PostgreSQL<br/>schema de referência: IBGE")]
     EXT["Provedores externos<br/>ou simulados"]
+    IBGE["Arquivos oficiais do IBGE"]
 
     B --> F
     F -->|"JSON + cookie de sessão"| API
     API --> MW --> Modulos
     Modulos --> DB
     LOC --> PR -.-> EXT
+    DEM -->|"somente leitura"| REF
+    IBGE --> IMP -->|"escrita restrita"| REF
 ```
 
 ## Componentes
@@ -42,6 +48,10 @@ flowchart TB
 **Banco de dados.** PostgreSQL, acessado com SQL parametrizado e sem ORM. O schema evolui por migrations versionadas. Regras importantes, como posse dos dados, integridade entre entidades e imutabilidade dos snapshots, são reforçadas no próprio banco, além da aplicação.
 
 **Comparação.** Uma camada de leitura sobre os dados já existentes. Ela recebe a seleção de locais de um projeto, lê os snapshots salvos correspondentes e monta a visão comparativa. Não grava nada (não existe tabela de comparações), não aciona provedores e não altera snapshots; a mesma seleção produz sempre a mesma comparação.
+
+**Demografia (v0.7, experimental).** Um módulo independente que cruza o raio da análise com a Grade Estatística do Censo 2022 do IBGE. Os dados oficiais ficam em um schema separado dos dados dos usuários, sem vínculo com contas, e a aplicação os lê por uma conexão em que o próprio banco recusa qualquer escrita. O cálculo é feito na aplicação, com a projeção cartográfica oficial da grade e correção local de escala, sem PostGIS. A integração com a análise nunca é fatal: se os dados não estiverem disponíveis, a análise comercial continua e a seção informa o motivo.
+
+**Importador.** Uma ferramenta de linha de comando, usada apenas por quem opera o sistema, que importa os arquivos oficiais do IBGE: verifica a integridade (SHA-256), valida cada registro (inclusive a geometria oficial de cada célula), grava em uma transação por quadrante, é idempotente e retomável após interrupções, e publica cada versão dos dados de uma só vez. Pode usar uma identidade de banco com permissão de escrita restrita às tabelas de referência.
 
 **Provedores.** Geocodificação e busca de lugares ficam atrás de contratos. Existem implementações para um provedor externo e implementações simuladas determinísticas, usadas em desenvolvimento, testes e CI. Trocar o provedor não afeta o restante do sistema.
 
@@ -59,6 +69,7 @@ erDiagram
 - A comparação não é uma entidade: é derivada, no momento da leitura, de locais candidatos do mesmo projeto e de seus snapshots.
 - Uma análise salva pode existir sem local candidato (análise avulsa).
 - Excluir um projeto remove seus locais candidatos, mas as análises salvas são preservadas no histórico, apenas desvinculadas.
+- Os dados demográficos de referência não pertencem a usuários: são públicos, versionados por publicação do IBGE e iguais para todos. Cada análise salva registra qual versão desses dados e qual versão do método produziram a sua estimativa.
 
 ## Fluxo de dados da comparação
 
@@ -87,11 +98,18 @@ flowchart LR
 | API versionada (`/api/v1`) | Permite evoluir contratos sem quebrar clientes |
 | SQL parametrizado sem ORM | Controle explícito das consultas; interpolação de SQL é bloqueada por regra de lint |
 | Mesma origem para frontend e API | Cookies de sessão mais seguros e sem CORS aberto |
+| Dados do IBGE importados, não consultados em tempo real | As consultas por raio exigem dados locais; versões fixas tornam as análises reproduzíveis e compatíveis com snapshots imutáveis |
+| Schema separado e somente leitura para dados públicos | Dados de referência não se misturam com dados dos usuários, e a aplicação não consegue alterá-los |
+| Sem PostGIS | A grade oficial é regular: uma busca por faixa de coordenadas e geometria na aplicação bastam, sem infraestrutura adicional |
+| Estimativas com faixa e estimativa central condicional | Evita falsa precisão; o critério foi validado com dados oficiais de várias regiões |
+| Versões independentes de dados e de método | Resultados de versões diferentes não são misturados na comparação |
+| Cautela com coordenadas de provedores de mapas | Só pontos posicionados pelo usuário são cruzados com os dados do IBGE |
 
 ## Qualidade e entrega
 
 - Testes de unidade, integração e contra PostgreSQL real no backend; testes de componentes e de fluxos completos no frontend.
-- Testes de arquitetura verificam automaticamente as regras de posse em toda camada de persistência nova.
+- Testes de arquitetura verificam automaticamente as regras de posse em toda camada de persistência nova, e mantêm os dados públicos de referência em uma categoria própria e mais restrita (apenas leitura, sem tabelas nem identificadores de usuário).
+- Na v0.7, a projeção é conferida contra a geometria oficial do IBGE e contra distâncias geodésicas calculadas de forma independente, e o importador é testado com arquivos inválidos, hashes divergentes, duplicidades, interrupções e retomadas.
 - Testes garantem que abrir uma comparação não chama provedores, não grava dados e não altera snapshots, e que a tela não usa linguagem de ranking ou recomendação.
 - CI (GitHub Actions) com banco PostgreSQL efêmero: lint, migrations com verificação de idempotência, testes e build.
 - Smoke tests em navegador cobrindo os fluxos principais, executados localmente com provedores simulados.
