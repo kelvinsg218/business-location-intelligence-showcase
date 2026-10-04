@@ -27,7 +27,7 @@ Práticas adotadas no BLI, descritas em alto nível. Configurações, parâmetro
 - Comparações só aceitam locais do mesmo projeto e do próprio usuário; qualquer outra seleção é recusada da mesma forma.
 - Consultas SQL sempre parametrizadas. Uma regra de lint e testes de arquitetura impedem SQL montado por concatenação.
 - Resultados salvos não podem ser alterados, nem pela API nem diretamente no banco.
-- Os dados públicos do IBGE ficam separados dos dados dos usuários. A aplicação os lê por uma conexão somente leitura, imposta pelo próprio banco; a importação usa uma ferramenta à parte, que pode operar com uma identidade de banco restrita às tabelas desses dados, sem acesso a dados de usuários.
+- Os dados públicos do IBGE ficam separados dos dados dos usuários. A aplicação os lê por uma conexão em modo somente leitura, que evita escritas acidentais; para que ela não consiga alterá-los em hipótese alguma, essa conexão deve usar uma identidade de banco com permissão apenas de leitura (recomendado em produção; o servidor emite um aviso quando ela não está configurada). A importação usa uma ferramenta à parte, que pode operar com uma identidade de banco restrita às tabelas desses dados, sem acesso a dados de usuários.
 - Arquivos oficiais importados têm a integridade verificada (SHA-256) e cada registro validado antes de qualquer gravação.
 
 ## Privacidade

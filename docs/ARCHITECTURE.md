@@ -99,7 +99,7 @@ flowchart LR
 | SQL parametrizado sem ORM | Controle explícito das consultas; interpolação de SQL é bloqueada por regra de lint |
 | Mesma origem para frontend e API | Cookies de sessão mais seguros e sem CORS aberto |
 | Dados do IBGE importados, não consultados em tempo real | As consultas por raio exigem dados locais; versões fixas tornam as análises reproduzíveis e compatíveis com snapshots imutáveis |
-| Schema separado e somente leitura para dados públicos | Dados de referência não se misturam com dados dos usuários, e a aplicação não consegue alterá-los |
+| Schema separado e somente leitura para dados públicos | Dados de referência não se misturam com dados dos usuários. A aplicação os lê em sessões somente leitura, que evitam escritas acidentais; a garantia de que ela não consegue alterá-los vem de uma identidade de banco que só tem permissão de leitura, recomendada em produção |
 | Sem PostGIS | A grade oficial é regular: uma busca por faixa de coordenadas e geometria na aplicação bastam, sem infraestrutura adicional |
 | Estimativas com faixa e estimativa central condicional | Evita falsa precisão; o critério foi validado com dados oficiais de várias regiões |
 | Versões independentes de dados e de método | Resultados de versões diferentes não são misturados na comparação |
